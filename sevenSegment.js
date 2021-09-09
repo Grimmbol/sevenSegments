@@ -335,10 +335,14 @@ class SevenSegmentDisplay extends HTMLElement {
       }
     }
 
-    
+    // Fill available seven segment digits with as much of this.value as possible
+    // Digits without value remain zero
+    let digitNodes = wrapperElem.querySelectorAll("seven-segment-digit");
+    let numDigitNodes = digitNodes.length;
     for(let i = 0; i < this.value.length; i++) {
-
-
+      if(i < numDigitNodes) {
+	digitNodes[i].setAttribute("value", this.value[i]);
+      }
     }
 
     this.displayBuffer = wrapperElem.cloneNode(true);
@@ -350,8 +354,6 @@ class SevenSegmentDisplay extends HTMLElement {
   static get observedAttributes(){
     return ["value", "format"];
   }
-
-  // *** util ***
   
   // *** Update ***
   attributeChangedCallback(name, oldValue, newValue) {
@@ -368,7 +370,11 @@ class SevenSegmentDisplay extends HTMLElement {
     }
   }
 
-  // 1. compare number of digits of value string to number of children
+  // Two steps:
+  // 1. Go through the display layout. If it does not match current format, update
+  // 2. Go through the value string and display digit values.
+  //    Update digits to match value
+  // This should be done with a buffer, to reduce the number of redraws
   updateDOM(){
     
   }
