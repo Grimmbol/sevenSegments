@@ -40,6 +40,11 @@ class SevenSegmentDigit extends HTMLElement {
     // The colors used for the display
     this.onColor = "red";
     this.offColor = "#3d0f04";
+
+    // Run setup and render inital state
+    this.setupState();
+    this.setupDOM();
+    this.render();
   }
   
   setupState() {
@@ -48,12 +53,10 @@ class SevenSegmentDigit extends HTMLElement {
       parseInt(this.getAttribute("value"), 10) :
       0;
 
-    console.log("At setup, value is " + this.value);
-
     // Clamp to a single digit
     if(this.value > 9) {this.value = 9;}
     if(this.value < 0) {this.value = 0;}
-    console.log("At setup after clamp, value is " + this.value);
+
   }
 
   setupDOM() {
@@ -143,20 +146,16 @@ class SevenSegmentDigit extends HTMLElement {
     return ["value"];
   }
 
-  // If we want to read attributes or the outside DOM in general,
-  // we must wait for the custom element to be connected
-  connectedCallback() {
-    this.setupState();
-    this.setupDOM();
-    this.render();
-  }
-
   attributeChangedCallback(name, oldValue, newValue) {
     // Only update on actual change
     if(oldValue != newValue) {
       if(name == "value") {
 	this.value =
 	  parseInt(newValue, 10);
+
+	if (isNaN(this.value)) {
+	  this.value = 0;
+	}
 	// Clamp to a single digit
 	if(this.value > 9) {this.value = 9;}
 	if(this.value < 0) {this.value = 0;}
@@ -170,15 +169,12 @@ class SevenSegmentDigit extends HTMLElement {
   //*** Render ***
   // Update buffer, then swap currently displayed SVG tree with buffer
   render() {
-
     let newPattern = this.lightPatterns[this.value];
-    console.log(newPattern.toString(2))
     let isOn = 0;
     // Check bits of new pattern. If 1 turn light on, if 0 turn light off
     let bufferLights = this.svgBuffer.querySelector("g").childNodes;
     for(let i = 0; i < 7; i++) {
       isOn = (newPattern >> i) & 1;
-      console.log(bufferLights[i])
       if(isOn) {
 	bufferLights[i].setAttributeNS(null, "fill", this.onColor);
       }
@@ -188,9 +184,8 @@ class SevenSegmentDigit extends HTMLElement {
     }
     
 
-    // Apply buffer
+    // Swap buffers
     let oldSvgRoot = this.shadowRoot.querySelector("#svgRoot");
-    console.log(oldSvgRoot);
     this.shadowRoot.replaceChild(this.svgBuffer, oldSvgRoot);
     this.svgBuffer = oldSvgRoot;
     
@@ -200,14 +195,21 @@ customElements.define("seven-segment-digit", SevenSegmentDigit);
 
 
 // ***** DISPLAY *****
+// Stores display value as string
 class SevenSegmentDisplay extends HTMLElement {
 
   // *** Setup ***
   constructor() {
     super();
     this.attachShadow({mode: 'open'});
+    // Set up svg prototypes for '.' and ':' that can be cloned and
+    // inserted into the display if requested by format string
+    this.onColor = "red";
+    this.offColor = "#3d0f04";
+    this.createTemplates();
+    // For colons on/off. Should be passed to seven segment digits as attributes?
   }
-
+  
   // If we want to read attributes or the outside DOM in general,
   // we must wait for the custom element to be connected
   connectedCallback() {
@@ -215,64 +217,160 @@ class SevenSegmentDisplay extends HTMLElement {
     this.setupDOM();
   }
 
-  setupState() {
-    let workingValue =
-      this.hasAttribute("value") ?
-      parseInt(this.getAttribute("value"), 10) :
-      0;
+  // 
+  createTemplates() {
+    let svgNS = "http://www.w3.org/2000/svg";
+    let svgColonRoot = document.createElementNS(svgNS, "svg");
+    let svgDotRoot = document.createElementNS(svgNS, "svg");
+    let svgDot = document.createElementNS(svgNS, "circle");
+
+    svgDot.setAttributeNS(null, "r", "3");
+    svgDot.setAttributeNS(null, "cx", "3");
+    svgDot.setAttributeNS(null, "cy", "3");
+    svgDot.setAttributeNS(null, "fill", this.onColor); // lit by default
+
+    let colonDot1 = svgDot.cloneNode(true);
+    let colonDot2 = svgDot.cloneNode(true);
+    let dotDot = svgDot.cloneNode(true);
     
-    this.value = workingValue;
-    this.numDigits = this.countDigits(workingValue);
+    svgColonRoot.setAttributeNS(null,"id","svgColonRoot");
+    svgColonRoot.setAttributeNS(null,"height","60");
+    svgColonRoot.setAttributeNS(null,"width","10");
+
+    colonDot1.setAttributeNS(null, "transform", "translate(2,15)");
+    colonDot2.setAttributeNS(null, "transform", "translate(2,40)");
+    svgColonRoot.appendChild(colonDot1);
+    svgColonRoot.appendChild(colonDot2);
+    
+    svgDotRoot.setAttributeNS(null,"id","svgDotRoot");
+    svgDotRoot.setAttributeNS(null,"height","60");
+    svgDotRoot.setAttributeNS(null,"width","10");
+
+    dotDot.setAttributeNS(null, "transform", "translate(0,50)")
+    svgDotRoot.appendChild(dotDot);
+
+    // make templates visible
+    this.colon = svgColonRoot;
+    this.dot = svgDotRoot;
   }
 
-  setupDOM() {
-    for(let i = 0; i < this.numDigits; i++) {
-      let digit = new SevenSegmentDigit();
-      digit.setAttribute("value", 5);
-      this.shadowRoot.appendChild(digit);
+  setupState() {
+    this.value =
+      this.hasAttribute("value") ?
+      this.getAttribute("value") :
+      "0";
+    
+    let tmpFormat = ""
+    if(this.hasAttribute("format")) {
+      tmpFormat = this.getAttribute("format");
     }
+    else {
+      // If no format is specified, fill with enough digits to display value
+      for(let i = 0; i < this.value.length; i++) {
+	tmpFormat += "d"
+      }
+    }
+    this.format = tmpFormat;
+  }
+
+
+  // Two steps:
+  // 1. add DOM nodes to match given format
+  // 2. fill in digits at digit slots, matching digit slots and digits ltr
+  //    For instance, dd:dd and 12345 should render 12:34.
+  setupDOM() {
+    // First create component tree to match format string
+    let wrapperElem = document.createElement("div");
+    wrapperElem.setAttribute("id", "displayWrapper");
+
+    // Parse format string and create DOM nodes
+    let bufferStart = 0;
+
+    while(bufferStart < this.format.length) {
+      let curChar = this.format[bufferStart];
+   
+      if(curChar == "d" || curChar == "D") {
+	let digit = document.createElement("seven-segment-digit");
+	wrapperElem.appendChild(digit);
+	bufferStart += 1;
+      }
+
+      // Create ':' in off state if alone, or on state if followed by '*'
+      else if(curChar == ':') {
+	if((bufferStart + 1) < this.format.length
+	   && this.format[bufferStart+1] == '*') {
+	  // Create lit ':'
+	  let newLitColon = this.colon.cloneNode(true);
+	  wrapperElem.appendChild(newLitColon);
+	  bufferStart += 2;
+	}
+	else {
+	  // Create unlit ':'
+	  let newUnlitColon = this.colon.cloneNode(true);
+	  let unlitCircles = newUnlitColon.querySelectorAll("circle");
+	  
+	  unlitCircles[0].setAttributeNS(null, "fill", this.offColor);
+	  unlitCircles[1].setAttributeNS(null, "fill", this.offColor);
+
+	  wrapperElem.appendChild(newUnlitColon);
+	  bufferStart += 1;
+	}
+      }
+
+      else if(curChar == '.') {
+	if((bufferStart + 1) < this.format.length
+	   && this.format[bufferStart+1] == '*') {
+	  // Create lit '.'
+	  let newLitDot = this.dot.cloneNode(true);
+	  wrapperElem.appendChild(newLitDot);
+	  bufferStart += 2;
+	}
+	else {
+	  // Create unlit '.'
+	  let newUnlitDot = this.dot.cloneNode(true);
+	  newUnlitDot.childNodes[0].setAttributeNS(null, "fill", this.offColor);
+	  wrapperElem.appendChild(newUnlitDot);
+	  bufferStart += 1;
+	}
+      }
+    }
+
+    
+    for(let i = 0; i < this.value.length; i++) {
+
+
+    }
+
+    this.displayBuffer = wrapperElem.cloneNode(true);
+    
+    this.shadowRoot.appendChild(wrapperElem);
+    this.style.backgroundColor = "black";
   }
 
   static get observedAttributes(){
-    return ["value"];
+    return ["value", "format"];
   }
 
   // *** util ***
-  countDigits(number) {
-    let count = 0;
-    while(number > 1) {
-      number = number / 10;
-      count = count + 1;
-    }
-    return count;
-  }
   
   // *** Update ***
   attributeChangedCallback(name, oldValue, newValue) {
     // Only update on actual change
     if(oldValue != newValue) {
       if(name == "value") {
-	this.updateValue(newValue);
+	this.value = newValue;
       }
-    }
-  }
-
-  updateValue(newValue) {
-    if(typeof(newValue) == "string") {
-      this.value = parseInt(newValue, 10);
-    }
-    let newNumDigits = this.countDigits(newValue);
-    let oldNumDigits = this.numDigits;
-
-    this.numDigits = newNumDigits;
-    
-    if(newNumDigits != oldNumDigits) {
+      if(name == "format") {
+	this.format = newValue;
+      }
+      
       this.updateDOM();
     }
   }
 
+  // 1. compare number of digits of value string to number of children
   updateDOM(){
-   
+    
   }
 }
 customElements.define("seven-segment-display", SevenSegmentDisplay);
