@@ -16,21 +16,21 @@ class SevenSegmentDigit extends HTMLElement {
     // 4    5
     // 4    5
     //  6666
-    // First byte in pattern byte string sets light 0,
+    // Least significant bit in pattern bit string sets light 0,
     // second light 1 etc.
     
     this.lightPatterns =
       [
 	0b1110111, //0
-	0b0010010, //1
+	0b0100100, //1
 	0b1011101, //2
-	0b1011011, //3
-	0b0111010, //4
+	0b1101101, //3
+	0b0101110, //4
 	0b1101011, //5
-	0b1101111, //6
-	0b1010010, //7
+	0b1111011, //6
+	0b0100101, //7
 	0b1111111, //8
-	0b1111011, //9
+	0b1101111, //9
       ]
 
     // Actual state of lights
@@ -48,9 +48,12 @@ class SevenSegmentDigit extends HTMLElement {
       parseInt(this.getAttribute("value"), 10) :
       0;
 
+    console.log("At setup, value is " + this.value);
+
     // Clamp to a single digit
     if(this.value > 9) {this.value = 9;}
     if(this.value < 0) {this.value = 0;}
+    console.log("At setup after clamp, value is " + this.value);
   }
 
   setupDOM() {
@@ -148,14 +151,6 @@ class SevenSegmentDigit extends HTMLElement {
     this.render();
   }
 
-  
-  // *** Update ***
-  // Map the current digit to a light pattern
-  configureLights() {
-    let a = 5
-  }
-  
-  
   attributeChangedCallback(name, oldValue, newValue) {
     // Only update on actual change
     if(oldValue != newValue) {
@@ -173,19 +168,51 @@ class SevenSegmentDigit extends HTMLElement {
   }
 
   //*** Render ***
+  // Update buffer, then swap currently displayed SVG tree with buffer
   render() {
-    // Update the light state, diff old and new and rerender
-    // what must be rerendered
+
+    let newPattern = this.lightPatterns[this.value];
+    console.log(newPattern.toString(2))
+    let isOn = 0;
+    // Check bits of new pattern. If 1 turn light on, if 0 turn light off
+    let bufferLights = this.svgBuffer.querySelector("g").childNodes;
+    for(let i = 0; i < 7; i++) {
+      isOn = (newPattern >> i) & 1;
+      console.log(bufferLights[i])
+      if(isOn) {
+	bufferLights[i].setAttributeNS(null, "fill", this.onColor);
+      }
+      else {
+	bufferLights[i].setAttributeNS(null, "fill", this.offColor);
+      }
+    }
+    
+
+    // Apply buffer
+    let oldSvgRoot = this.shadowRoot.querySelector("#svgRoot");
+    console.log(oldSvgRoot);
+    this.shadowRoot.replaceChild(this.svgBuffer, oldSvgRoot);
+    this.svgBuffer = oldSvgRoot;
+    
   }
 }
 customElements.define("seven-segment-digit", SevenSegmentDigit);
 
+
+// ***** DISPLAY *****
 class SevenSegmentDisplay extends HTMLElement {
 
   // *** Setup ***
   constructor() {
     super();
     this.attachShadow({mode: 'open'});
+  }
+
+  // If we want to read attributes or the outside DOM in general,
+  // we must wait for the custom element to be connected
+  connectedCallback() {
+    this.setupState();
+    this.setupDOM();
   }
 
   setupState() {
@@ -201,6 +228,7 @@ class SevenSegmentDisplay extends HTMLElement {
   setupDOM() {
     for(let i = 0; i < this.numDigits; i++) {
       let digit = new SevenSegmentDigit();
+      digit.setAttribute("value", 5);
       this.shadowRoot.appendChild(digit);
     }
   }
@@ -208,20 +236,12 @@ class SevenSegmentDisplay extends HTMLElement {
   static get observedAttributes(){
     return ["value"];
   }
-  
-  // If we want to read attributes or the outside DOM in general,
-  // we must wait for the custom element to be connected
-  connectedCallback() {
-    this.setupState();
-    this.setupDOM();
-  }
 
   // *** util ***
-  // Primitive datatypes are passed by reference
   countDigits(number) {
     let count = 0;
     while(number > 1) {
-      number = number * 0.1;
+      number = number / 10;
       count = count + 1;
     }
     return count;
