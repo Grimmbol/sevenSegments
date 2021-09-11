@@ -59,12 +59,13 @@ class SevenSegmentDigit extends HTMLElement {
 
   }
 
+  // Optimisation: avoid transforms
   setupDOM() {
     let svgNS = "http://www.w3.org/2000/svg";
     let svgRoot = document.createElementNS(svgNS, "svg");
     svgRoot.setAttributeNS(null,"id","svgRoot");
     svgRoot.setAttributeNS(null,"height","60");
-    svgRoot.setAttributeNS(null,"width","38");
+    svgRoot.setAttributeNS(null,"width","36");
 
     let backgroundRect = document.createElementNS(svgNS, "rect")
     backgroundRect.setAttributeNS(null, "width", "100%");
@@ -73,52 +74,42 @@ class SevenSegmentDigit extends HTMLElement {
 
     let wrapperGroup = document.createElementNS(svgNS, "g");
     wrapperGroup.setAttributeNS(null,"id", "lightsGroup");
-    wrapperGroup.setAttributeNS(null,"transform", "translate(4, 4)");
 
     // Create svg for number in off-state
+    // Avoids transforms for faster rendering
     let light0 = document.createElementNS(svgNS, "polygon");
     light0.setAttributeNS(null, "id", "light0");
-    light0.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light0.setAttributeNS(null, "points", "4 2, 6 0, 26 0, 28 2, 26 4, 6 4");
     light0.setAttributeNS(null, "fill", this.offColor);
 
     let light1 = document.createElementNS(svgNS, "polygon");
     light1.setAttributeNS(null, "id", "light1");
-    light1.setAttributeNS(null, "transform-origin", "3 2");
-    light1.setAttributeNS(null, "transform", "rotate(90)");
-    light1.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light1.setAttributeNS(null, "points", "2 4, 4 6, 4 26, 2 28, 0 26, 0 6");
     light1.setAttributeNS(null, "fill", this.offColor);
 
     let light2 = document.createElementNS(svgNS, "polygon");
     light2.setAttributeNS(null, "id", "light2");
-    light2.setAttributeNS(null, "transform-origin", "3 2");
-    light2.setAttributeNS(null, "transform", "translate(24, 0) rotate(90)");
-    light2.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light2.setAttributeNS(null, "points", "30 4, 32 6, 32 26, 30 28, 28 26, 28 6 ");
     light2.setAttributeNS(null, "fill", this.offColor);
 
     let light3 = document.createElementNS(svgNS, "polygon");
     light3.setAttributeNS(null, "id", "light3");
-    light3.setAttributeNS(null, "transform", "translate(0, 24)");
-    light3.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light3.setAttributeNS(null, "points", "4 30, 6 28, 26 28, 28 30, 26 32, 6 32");
     light3.setAttributeNS(null, "fill", this.offColor);
    
     let light4 = document.createElementNS(svgNS, "polygon");
     light4.setAttributeNS(null, "id", "light4");
-    light4.setAttributeNS(null, "transform-origin", "3 2");
-    light4.setAttributeNS(null, "transform", "translate(0, 24) rotate(90)");
-    light4.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light4.setAttributeNS(null, "points", "2 32, 4 34, 4 54, 2 56, 0 54, 0 34");
     light4.setAttributeNS(null, "fill", this.offColor);
 
     let light5 = document.createElementNS(svgNS, "polygon");
     light5.setAttributeNS(null, "id", "light5");
-    light5.setAttributeNS(null, "transform-origin", "3 2");
-    light5.setAttributeNS(null, "transform", "translate(24, 24) rotate(90)");
-    light5.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light5.setAttributeNS(null, "points", "30 32, 32 34, 32 54, 30 56, 28 54, 28 34");
     light5.setAttributeNS(null, "fill", this.offColor);
 
     let light6 = document.createElementNS(svgNS, "polygon");
     light6.setAttributeNS(null, "id", "light6");
-    light6.setAttributeNS(null, "transform", "translate(0, 48)");
-    light6.setAttributeNS(null, "points", "3 2, 5 0, 25 0, 27 2, 25 4, 5 4");
+    light6.setAttributeNS(null, "points", "4 58, 6 56, 26 56, 28 58, 26 60, 6 60");
     light6.setAttributeNS(null, "fill", this.offColor);
     
     // Glue together the wrapper
@@ -217,7 +208,7 @@ class SevenSegmentDisplay extends HTMLElement {
     this.setupDOM();
   }
 
-  // 
+  // Optimisation: avoid transforms
   createTemplates() {
     let svgNS = "http://www.w3.org/2000/svg";
     let svgColonRoot = document.createElementNS(svgNS, "svg");
@@ -235,18 +226,22 @@ class SevenSegmentDisplay extends HTMLElement {
     
     svgColonRoot.setAttributeNS(null,"id","svgColonRoot");
     svgColonRoot.setAttributeNS(null,"height","60");
-    svgColonRoot.setAttributeNS(null,"width","10");
+    svgColonRoot.setAttributeNS(null,"width","16");
 
-    colonDot1.setAttributeNS(null, "transform", "translate(2,15)");
-    colonDot2.setAttributeNS(null, "transform", "translate(2,40)");
+    colonDot1.setAttributeNS(null, "cx", "6");
+    colonDot1.setAttributeNS(null, "cy", "16");
+    colonDot2.setAttributeNS(null, "cx", "6");
+    colonDot2.setAttributeNS(null, "cy", "44");
     svgColonRoot.appendChild(colonDot1);
     svgColonRoot.appendChild(colonDot2);
     
     svgDotRoot.setAttributeNS(null,"id","svgDotRoot");
     svgDotRoot.setAttributeNS(null,"height","60");
-    svgDotRoot.setAttributeNS(null,"width","10");
+    svgDotRoot.setAttributeNS(null,"width","16");
 
-    dotDot.setAttributeNS(null, "transform", "translate(0,50)")
+    dotDot.setAttributeNS(null, "cx", "4");
+    dotDot.setAttributeNS(null, "cy", "56");
+    
     svgDotRoot.appendChild(dotDot);
 
     // make templates visible
@@ -345,10 +340,12 @@ class SevenSegmentDisplay extends HTMLElement {
       }
     }
 
+    // Update buffer *before* inserting into live DOM tree to reduce redraws
     this.displayBuffer = wrapperElem.cloneNode(true);
     
     this.shadowRoot.appendChild(wrapperElem);
     this.style.backgroundColor = "black";
+    this.style.padding = "2px";
   }
 
   static get observedAttributes(){
@@ -376,6 +373,72 @@ class SevenSegmentDisplay extends HTMLElement {
   //    Update digits to match value
   // This should be done with a buffer, to reduce the number of redraws
   updateDOM(){
+
+    // Build new 
+    // Parse format string and create DOM nodes
+    let bufferStart = 0;
+
+    while(bufferStart < this.format.length) {
+      let curChar = this.format[bufferStart];
+   
+      if(curChar == "d" || curChar == "D") {
+	let digit = document.createElement("seven-segment-digit");
+	wrapperElem.appendChild(digit);
+	bufferStart += 1;
+      }
+
+      // Create ':' in off state if alone, or on state if followed by '*'
+      else if(curChar == ':') {
+	if((bufferStart + 1) < this.format.length
+	   && this.format[bufferStart+1] == '*') {
+	  // Create lit ':'
+	  let newLitColon = this.colon.cloneNode(true);
+	  wrapperElem.appendChild(newLitColon);
+	  bufferStart += 2;
+	}
+	else {
+	  // Create unlit ':'
+	  let newUnlitColon = this.colon.cloneNode(true);
+	  let unlitCircles = newUnlitColon.querySelectorAll("circle");
+	  
+	  unlitCircles[0].setAttributeNS(null, "fill", this.offColor);
+	  unlitCircles[1].setAttributeNS(null, "fill", this.offColor);
+
+	  wrapperElem.appendChild(newUnlitColon);
+	  bufferStart += 1;
+	}
+      }
+
+      else if(curChar == '.') {
+	if((bufferStart + 1) < this.format.length
+	   && this.format[bufferStart+1] == '*') {
+	  // Create lit '.'
+	  let newLitDot = this.dot.cloneNode(true);
+	  wrapperElem.appendChild(newLitDot);
+	  bufferStart += 2;
+	}
+	else {
+	  // Create unlit '.'
+	  let newUnlitDot = this.dot.cloneNode(true);
+	  newUnlitDot.childNodes[0].setAttributeNS(null, "fill", this.offColor);
+	  wrapperElem.appendChild(newUnlitDot);
+	  bufferStart += 1;
+	}
+      }
+    }
+
+    // Fill available seven segment digits with as much of this.value as possible
+    // Digits without value remain zero
+    let digitNodes = wrapperElem.querySelectorAll("seven-segment-digit");
+    let numDigitNodes = digitNodes.length;
+    for(let i = 0; i < this.value.length; i++) {
+      if(i < numDigitNodes) {
+	digitNodes[i].setAttribute("value", this.value[i]);
+      }
+    }
+
+    // Update buffer *before* inserting into live DOM tree to reduce redraws
+    this.displayBuffer = wrapperElem.cloneNode(true);
     
   }
 }
