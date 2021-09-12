@@ -65,13 +65,15 @@ class SevenSegmentDigit extends HTMLElement {
     let svgRoot = document.createElementNS(svgNS, "svg");
     svgRoot.setAttributeNS(null,"id","svgRoot");
     svgRoot.setAttributeNS(null,"height","60");
-    svgRoot.setAttributeNS(null,"width","36");
+    svgRoot.setAttributeNS(null,"width","32");
 
+    /* Leave it to users to add background. Saves rendering time
     let backgroundRect = document.createElementNS(svgNS, "rect")
     backgroundRect.setAttributeNS(null, "width", "100%");
     backgroundRect.setAttributeNS(null, "height", "100%");
     backgroundRect.setAttributeNS(null, "fill", "black");
-
+    */
+    
     let wrapperGroup = document.createElementNS(svgNS, "g");
     wrapperGroup.setAttributeNS(null,"id", "lightsGroup");
 
@@ -122,7 +124,7 @@ class SevenSegmentDigit extends HTMLElement {
     wrapperGroup.appendChild(light6);
     
     // Glue top level elements
-    svgRoot.appendChild(backgroundRect);
+    //svgRoot.appendChild(backgroundRect);
     svgRoot.appendChild(wrapperGroup);
     
     // Deep copy the constructed svg for later
@@ -140,6 +142,7 @@ class SevenSegmentDigit extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     // Only update on actual change
     if(oldValue != newValue) {
+      // TODO: permit bitstring input for manual light controll?
       if(name == "value") {
 	this.value =
 	  parseInt(newValue, 10);
@@ -204,6 +207,7 @@ class SevenSegmentDisplay extends HTMLElement {
   // If we want to read attributes or the outside DOM in general,
   // we must wait for the custom element to be connected
   connectedCallback() {
+    this.loaded = true;
     this.setupState();
     this.setupDOM();
   }
@@ -281,11 +285,13 @@ class SevenSegmentDisplay extends HTMLElement {
     // Parse format string and create DOM nodes
     let bufferStart = 0;
 
+    // Add margin style to all children
     while(bufferStart < this.format.length) {
       let curChar = this.format[bufferStart];
    
       if(curChar == "d" || curChar == "D") {
 	let digit = document.createElement("seven-segment-digit");
+	digit.style.margin = "2px";
 	wrapperElem.appendChild(digit);
 	bufferStart += 1;
       }
@@ -345,7 +351,7 @@ class SevenSegmentDisplay extends HTMLElement {
     
     this.shadowRoot.appendChild(wrapperElem);
     this.style.backgroundColor = "black";
-    this.style.padding = "2px";
+    //this.style.padding = "2px";
   }
 
   static get observedAttributes(){
@@ -358,87 +364,47 @@ class SevenSegmentDisplay extends HTMLElement {
     if(oldValue != newValue) {
       if(name == "value") {
 	this.value = newValue;
+	this.renderValue();
       }
       if(name == "format") {
 	this.format = newValue;
+	this.renderFormat();
       }
-      
-      this.updateDOM();
+
     }
   }
 
-  // Two steps:
-  // 1. Go through the display layout. If it does not match current format, update
-  // 2. Go through the value string and display digit values.
-  //    Update digits to match value
-  // This should be done with a buffer, to reduce the number of redraws
+  // This method only alters the value of the digit elements
+  renderValue() {
+    // No rendering before the element is actually loaded
+    if(!this.loaded) {
+      return;
+    }
+
+    // TODO: if no format is specified, the display
+    // should grow and shrink to accomodate all digits in this.value
+    
+    // No buffering, under the assumption that few digits change at once
+    let curDigits = this.shadowRoot.querySelectorAll("seven-segment-digit");
+    for(let i = 0; i < Math.max(this.value.length, curDigits.length); i++) {
+      let curDigit = curDigits[i];
+      let curDigitValue = curDigit.getAttribute("value");
+      // Compare digit in value to the digit already written
+      if(curDigitValue !== this.value[i]) {
+	curDigit.setAttribute("value", this.value[i]);
+      }
+    }
+  }
+
+  renderFormat() {
+    // No rendering before the element is actually loaded
+    if(!this.loaded) {
+      return;
+    }
+  }
+
   updateDOM(){
-
-    // Build new 
-    // Parse format string and create DOM nodes
-    let bufferStart = 0;
-
-    while(bufferStart < this.format.length) {
-      let curChar = this.format[bufferStart];
-   
-      if(curChar == "d" || curChar == "D") {
-	let digit = document.createElement("seven-segment-digit");
-	wrapperElem.appendChild(digit);
-	bufferStart += 1;
-      }
-
-      // Create ':' in off state if alone, or on state if followed by '*'
-      else if(curChar == ':') {
-	if((bufferStart + 1) < this.format.length
-	   && this.format[bufferStart+1] == '*') {
-	  // Create lit ':'
-	  let newLitColon = this.colon.cloneNode(true);
-	  wrapperElem.appendChild(newLitColon);
-	  bufferStart += 2;
-	}
-	else {
-	  // Create unlit ':'
-	  let newUnlitColon = this.colon.cloneNode(true);
-	  let unlitCircles = newUnlitColon.querySelectorAll("circle");
-	  
-	  unlitCircles[0].setAttributeNS(null, "fill", this.offColor);
-	  unlitCircles[1].setAttributeNS(null, "fill", this.offColor);
-
-	  wrapperElem.appendChild(newUnlitColon);
-	  bufferStart += 1;
-	}
-      }
-
-      else if(curChar == '.') {
-	if((bufferStart + 1) < this.format.length
-	   && this.format[bufferStart+1] == '*') {
-	  // Create lit '.'
-	  let newLitDot = this.dot.cloneNode(true);
-	  wrapperElem.appendChild(newLitDot);
-	  bufferStart += 2;
-	}
-	else {
-	  // Create unlit '.'
-	  let newUnlitDot = this.dot.cloneNode(true);
-	  newUnlitDot.childNodes[0].setAttributeNS(null, "fill", this.offColor);
-	  wrapperElem.appendChild(newUnlitDot);
-	  bufferStart += 1;
-	}
-      }
-    }
-
-    // Fill available seven segment digits with as much of this.value as possible
-    // Digits without value remain zero
-    let digitNodes = wrapperElem.querySelectorAll("seven-segment-digit");
-    let numDigitNodes = digitNodes.length;
-    for(let i = 0; i < this.value.length; i++) {
-      if(i < numDigitNodes) {
-	digitNodes[i].setAttribute("value", this.value[i]);
-      }
-    }
-
-    // Update buffer *before* inserting into live DOM tree to reduce redraws
-    this.displayBuffer = wrapperElem.cloneNode(true);
+    
     
   }
 }
