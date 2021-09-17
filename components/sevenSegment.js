@@ -355,7 +355,8 @@ class SevenSegmentDisplay extends HTMLElement {
     this.displayBuffer = wrapperElem.cloneNode();
     
     this.shadowRoot.appendChild(wrapperElem);
-    this.style.backgroundColor = "black";
+    // Size dictated by content
+    this.style = "display: inline-block; background-color: black;"
   }
 
   static get observedAttributes(){

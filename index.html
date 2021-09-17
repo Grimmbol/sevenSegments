@@ -7,27 +7,30 @@
 
 <body>
   <main>
-    <h1> The time is </h1>
-    
-    <seven-segment-display
-      id="display-test"
-      value="1234678"
-      format="dd:*dd.*dd">
-    </seven-segment-display>
-    <seven-segment-digit value="7"></seven-segment-digit>
-  </main>
+    <h1> Seven segments </h1>
 
-  <script>
-    let display = document.querySelector("seven-segment-display");
-    display.setAttribute("format", "dd:*dd:*dd.*dd");
-    
-    function update() {
-	const date = new Date();
-	const td = (number) => `${number}`.padStart(2, '0');
-	const text = `${td(date.getHours())}${td(date.getMinutes())}${td(date.getSeconds())}${td(Math.floor(date.getMilliseconds()/10))}`;
-	display.setAttribute("value", text);
-	requestAnimationFrame(update);
-    }
-    update();
-  </script>
+    <div id="digit-demo">
+      <h2> &lt seven-segment-digit &gt</h2>
+      <seven-segment-digit value="7"></seven-segment-digit>
+    </div>
+    <div id="display-demo">
+      <h2> &lt seven-segment-display &gt</h2>
+      <seven-segment-display
+	value="1234678"
+	format="dd:*dd.*dd">
+      </seven-segment-display>
+    </div>
+    <div id="clock-demo">
+      <h2> &lt seven-segment-clock &gt</h2>
+      TODO
+    </div>
+    <div id="timer-demo">
+      <h2> &lt seven-segment-timer &gt</h2>
+      TODO
+    </div>
+    <div id="stopwatch-demo">
+      <h2> &lt seven-segment-stopwatch &gt</h2>
+      TODO
+    </div>
+  </main>
 </body>
