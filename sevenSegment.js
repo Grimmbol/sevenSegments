@@ -3,35 +3,37 @@
 //  0-9 initally
 class SevenSegmentDigit extends HTMLElement {
 
+  // index 0 is the number 0, index 1 is the number 1 etc
+  // Light mapping is as follows
+  //  0000
+  // 1    2
+  // 1    2
+  //  3333
+  // 4    5
+  // 4    5
+  //  6666
+  // Least significant bit in pattern bit string sets light 0,
+  // second light 1 etc.
+  
+  
+  static lightPatterns =
+    [
+      0b1110111, //0
+      0b0100100, //1
+      0b1011101, //2
+      0b1101101, //3
+      0b0101110, //4
+      0b1101011, //5
+      0b1111011, //6
+      0b0100101, //7
+      0b1111111, //8
+      0b1101111  //9
+    ];
+  
   //*** Setup ***
   constructor() {
     super();
-    this.attachShadow({mode: 'open'});
-    // index 0 is the number 0, index 1 is the number 1 etc
-    // Light mapping is as follows
-    //  0000
-    // 1    2
-    // 1    2
-    //  3333
-    // 4    5
-    // 4    5
-    //  6666
-    // Least significant bit in pattern bit string sets light 0,
-    // second light 1 etc.
-    
-    this.lightPatterns =
-      [
-	0b1110111, //0
-	0b0100100, //1
-	0b1011101, //2
-	0b1101101, //3
-	0b0101110, //4
-	0b1101011, //5
-	0b1111011, //6
-	0b0100101, //7
-	0b1111111, //8
-	0b1101111, //9
-      ]
+    this.attachShadow({mode: 'open'}); 
 
     // Actual state of lights
     // reflected to visuals on a call to render()
@@ -41,6 +43,7 @@ class SevenSegmentDigit extends HTMLElement {
     this.onColor = "red";
     this.offColor = "#3d0f04";
 
+    
     // Run setup and render inital state
     this.setupState();
     this.setupDOM();
@@ -66,6 +69,7 @@ class SevenSegmentDigit extends HTMLElement {
     svgRoot.setAttributeNS(null,"id","svgRoot");
     svgRoot.setAttributeNS(null,"height","60");
     svgRoot.setAttributeNS(null,"width","32");
+    
     
     let wrapperGroup = document.createElementNS(svgNS, "g");
     wrapperGroup.setAttributeNS(null,"id", "lightsGroup");
@@ -122,7 +126,7 @@ class SevenSegmentDigit extends HTMLElement {
     
     // Deep copy the constructed svg for later
     // use as a rendering buffer 
-    this.svgBuffer = svgRoot.cloneNode(true);
+    this.svgBuffer = svgRoot;//.cloneNode(true);
 
     // Finally attach constructed svg to render tree
     this.shadowRoot.appendChild(svgRoot);
@@ -161,7 +165,7 @@ class SevenSegmentDigit extends HTMLElement {
   //*** Render ***
   // Update buffer, then swap currently displayed SVG tree with buffer
   render() {
-    let newPattern = this.lightPatterns[this.value];
+    let newPattern = SevenSegmentDigit.lightPatterns[this.value];
     let isOn = 0;
     // Check bits of new pattern. If 1 turn light on, if 0 turn light off
     let bufferLights = this.svgBuffer.querySelector("g").childNodes;
@@ -177,9 +181,9 @@ class SevenSegmentDigit extends HTMLElement {
     
 
     // Swap buffers
-    let oldSvgRoot = this.shadowRoot.querySelector("#svgRoot");
-    this.shadowRoot.replaceChild(this.svgBuffer, oldSvgRoot);
-    this.svgBuffer = oldSvgRoot;
+    //let oldSvgRoot = this.shadowRoot.querySelector("#svgRoot");
+    //this.shadowRoot.replaceChild(this.svgBuffer, oldSvgRoot);
+    //this.svgBuffer = oldSvgRoot;
     
   }
 }
@@ -579,7 +583,7 @@ class SevenSegmentDisplay extends HTMLElement {
 	width += (margin + digitWidth + margin);
       }
       else if(curChar === ':' || curChar === '.') {
-	width += (margin + separatorWidth + margin);
+	width += (separatorWidth);
       }
     }
     return width;

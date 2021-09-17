@@ -17,4 +17,17 @@
     <seven-segment-digit value="7"></seven-segment-digit>
   </main>
 
+  <script>
+    let display = document.querySelector("seven-segment-display");
+    display.setAttribute("format", "dd:*dd:*dd.*dd");
+    
+    function update() {
+	const date = new Date();
+	const td = (number) => `${number}`.padStart(2, '0');
+	const text = `${td(date.getHours())}${td(date.getMinutes())}${td(date.getSeconds())}${td(Math.floor(date.getMilliseconds()/10))}`;
+	display.setAttribute("value", text);
+	requestAnimationFrame(update);
+    }
+    update();
+  </script>
 </body>
