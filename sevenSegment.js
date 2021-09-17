@@ -66,13 +66,6 @@ class SevenSegmentDigit extends HTMLElement {
     svgRoot.setAttributeNS(null,"id","svgRoot");
     svgRoot.setAttributeNS(null,"height","60");
     svgRoot.setAttributeNS(null,"width","32");
-
-    /* Leave it to users to add background. Saves rendering time
-    let backgroundRect = document.createElementNS(svgNS, "rect")
-    backgroundRect.setAttributeNS(null, "width", "100%");
-    backgroundRect.setAttributeNS(null, "height", "100%");
-    backgroundRect.setAttributeNS(null, "fill", "black");
-    */
     
     let wrapperGroup = document.createElementNS(svgNS, "g");
     wrapperGroup.setAttributeNS(null,"id", "lightsGroup");
@@ -160,6 +153,11 @@ class SevenSegmentDigit extends HTMLElement {
     }
   }
 
+  // Boilerplate
+  disconnectedCallback() {}
+  adoptedCallback() {}
+  teardownDOM() {}
+  
   //*** Render ***
   // Update buffer, then swap currently displayed SVG tree with buffer
   render() {
@@ -200,8 +198,9 @@ class SevenSegmentDisplay extends HTMLElement {
     // inserted into the display if requested by format string
     this.onColor = "red";
     this.offColor = "#3d0f04";
+
+    // Setup svg templates for colon and dot
     this.createTemplates();
-    // For colons on/off. Should be passed to seven segment digits as attributes?
   }
   
   // If we want to read attributes or the outside DOM in general,
@@ -232,9 +231,9 @@ class SevenSegmentDisplay extends HTMLElement {
     svgColonRoot.setAttributeNS(null,"height","60");
     svgColonRoot.setAttributeNS(null,"width","16");
 
-    colonDot1.setAttributeNS(null, "cx", "6");
+    colonDot1.setAttributeNS(null, "cx", "8");
     colonDot1.setAttributeNS(null, "cy", "16");
-    colonDot2.setAttributeNS(null, "cx", "6");
+    colonDot2.setAttributeNS(null, "cx", "8");
     colonDot2.setAttributeNS(null, "cy", "44");
     svgColonRoot.appendChild(colonDot1);
     svgColonRoot.appendChild(colonDot2);
@@ -243,7 +242,7 @@ class SevenSegmentDisplay extends HTMLElement {
     svgDotRoot.setAttributeNS(null,"height","60");
     svgDotRoot.setAttributeNS(null,"width","16");
 
-    dotDot.setAttributeNS(null, "cx", "4");
+    dotDot.setAttributeNS(null, "cx", "8");
     dotDot.setAttributeNS(null, "cy", "56");
     
     svgDotRoot.appendChild(dotDot);
@@ -276,7 +275,7 @@ class SevenSegmentDisplay extends HTMLElement {
   // Two steps:
   // 1. add DOM nodes to match given format
   // 2. fill in digits at digit slots, matching digit slots and digits ltr
-  //    For instance, dd:dd and 12345 should render 12:34.
+  //    For instance, format="dd:dd" and value="12345" should render 12:34.
   setupDOM() {
     // First create component tree to match format string
     let wrapperElem = document.createElement("div");
@@ -291,7 +290,7 @@ class SevenSegmentDisplay extends HTMLElement {
    
       if(curChar == "d" || curChar == "D") {
 	let digit = document.createElement("seven-segment-digit");
-	digit.style.margin = "2px";
+	digit.style.margin = "0px 2px 0px 2px";
 	wrapperElem.appendChild(digit);
 	bufferStart += 1;
       }
@@ -347,11 +346,12 @@ class SevenSegmentDisplay extends HTMLElement {
     }
 
     // Update buffer *before* inserting into live DOM tree to reduce redraws
-    this.displayBuffer = wrapperElem.cloneNode(true);
+    // The buffer is only the wrapper element, to save memory
+    // Nodes that can be kept between format changes are transplanted to the buffer
+    this.displayBuffer = wrapperElem.cloneNode();
     
     this.shadowRoot.appendChild(wrapperElem);
     this.style.backgroundColor = "black";
-    //this.style.padding = "2px";
   }
 
   static get observedAttributes(){
@@ -368,13 +368,32 @@ class SevenSegmentDisplay extends HTMLElement {
       }
       if(name == "format") {
 	this.format = newValue;
-	this.renderFormat();
+	this.renderFormat(oldValue); // Pass old format for easier diffing
       }
-
     }
   }
 
+  disconnectedCallback() {
+    this.teardownDOM();
+  }
+
+  adoptedCallback() {
+    console.log("Adopted display");
+  }
+
+  teardownDOM() {
+    console.log("Teardown");
+    let wrapperNode = this.shadowRoot.querySelector("#displayWrapper");
+    console.log(wrapperNode);
+    if(wrapperNode) {
+      wrapperNode.remove(true);
+    }
+  }
+  
   // This method only alters the value of the digit elements
+  // Render screen not strictly needed, as the size does not change.
+  // If rerendering calls are a bottleneck, a render screen might help,
+  // Assumption is that few digits are altered at once in most updates
   renderValue() {
     // No rendering before the element is actually loaded
     if(!this.loaded) {
@@ -386,7 +405,7 @@ class SevenSegmentDisplay extends HTMLElement {
     
     // No buffering, under the assumption that few digits change at once
     let curDigits = this.shadowRoot.querySelectorAll("seven-segment-digit");
-    for(let i = 0; i < Math.max(this.value.length, curDigits.length); i++) {
+    for(let i = 0; i < Math.min(this.value.length, curDigits.length); i++) {
       let curDigit = curDigits[i];
       let curDigitValue = curDigit.getAttribute("value");
       // Compare digit in value to the digit already written
@@ -396,16 +415,175 @@ class SevenSegmentDisplay extends HTMLElement {
     }
   }
 
-  renderFormat() {
+  // We know something changed in the format string when this
+  // method is called. The question is what
+  renderFormat(oldFormat) {
     // No rendering before the element is actually loaded
     if(!this.loaded) {
       return;
     }
-  }
 
-  updateDOM(){
+    // 1. Count how many of each child node we've currently got
+    // lit/unlit does not matter in this case
+    // Note at what index they exist by pushing to a queue
+    // push adds to back, shift removes from front
+
+    // Stores indexes
+    let digits = [];
+    let colons = [];
+    let dots = [];
+
+    // Ignore '*', as they represent the state of the colon/dot preceeding
+    // and not a DOM node by themselves
+    let curChar = ''
+    for(let i = 0; i < oldFormat.length; i++) {
+      curChar = oldFormat[i];
+      if(curChar === 'd' || curChar === 'D') {
+	digits.push[i];
+      }
+      else if(curChar === '.') {
+	dots.push[i];
+      }
+      else if(curChar === ':') {
+	colons.push[i];
+      }
+      // In all other cases, we either have a '*' or some invalid character.
+      // in either case, these characters are ignored
+    }
+
+    // 2. Create a new DOM tree by reusing as much as possible
+    // If no old elements are available, create new.
+    // Render element for element, left to right 
+
+    // 2a Replace current view with rendering screen
+    // Set the screen size to the size of the new display format
+    let newWidth = this.getWidthFromFormat(this.format);
+    this.displayBuffer.style.width = (newWidth + "px");
+    this.displayBuffer.style.height = (60 + "px"); 
+    let screen = this.displayBuffer.cloneNode();
+    let newDisplayTree = this.displayBuffer.cloneNode();
     
+    // Swap old display tree with screen 
+    let oldDisplayTree = this.shadowRoot.querySelector("#displayWrapper");
+    this.shadowRoot.replaceChild(screen, oldDisplayTree);
+
+    // 2b, construct the new display format, reusing as much as possible
+    // The old display tree looses all references and is garbage collected
+    // When leaving this scope, AKA the not reused nodes are tossed in the garbage.
     
+    let oldChildNodes = oldDisplayTree.children;
+    let newNode;
+    for(let i = 0; i < this.format.length; i++) {
+      curChar = this.format[i];
+      if(curChar === 'd' || curChar === 'D') {
+	// Reuse
+	if(digits.length > 1) {
+	  newNode = oldChildNodes[digits.shift()];
+	}
+	// Create new
+	else {
+	  newNode = document.createElement("seven-segment-digit");
+	  newNode.style.margin = "0px 2px 0px 2px";
+	}
+      }
+      else if(curChar === '.') {
+	// Should the dot be lit?
+	if((i+1) < this.format.length
+	   && this.format[i+1] === '*') {
+	  // Reuse
+	  if(dots.length > 1) {
+	    newNode = oldChildNodes[dots.shift()];
+	    // We don't know if this old dot is lit, must light
+	    newNode.childNodes[0].setAttributeNS(null, "fill", this.onColor);
+	  }
+	  // Create new
+	  else {
+	    // New dots and colons are lit by default
+	    newNode = this.dot.cloneNode(true);
+	  }
+	  
+	  i++; //Skip over the '*', as it has just been parsed
+	}
+	// Unlit dot
+	else {
+	  // Reuse
+	  if(dots.length > 1) {
+	    newNode = oldChildNodes[dots.shift()];
+	  }
+	  // Create new
+	  else {
+	    newNode = this.dot.cloneNode(true);
+	  }
+	  // Set lighting
+	  newNode.childNodes[0].setAttributeNS(null, "fill", this.offColor);
+	}
+      }
+      else if(curChar === ':') {
+	// Should the colon be lit?
+	if((i+1) < this.format.length
+	   && this.format[i+1] === '*') {
+	  // Reuse
+	  if(colons.length > 1) {
+	    newNode = oldChildNodes(colons.shift());
+	    // Set lighting
+	    newNode.childNodes[0].setAttributeNS(null, "fill", this.onColor);
+	    newNode.childNodes[1].setAttributeNS(null, "fill", this.onColor);
+
+	  }
+	  // Create new
+	  else {
+	    // New dots and colons are lit by default
+	    newNode = this.colon.cloneNode(true);
+	  }
+
+	  i++; //Skip over the '*', as it has just been parsed
+	}
+	// Unlit colon
+	else {
+	  // Reuse
+	  if(colons.length > 1) {
+	    newNode = oldChildNodes(colons.shift());
+	  }
+	  // Create new
+	  else {
+	    newNode = this.colon.cloneNode(true);
+	  }
+
+	  // Set lighting
+	  newNode.childNodes[0].setAttributeNS(null, "fill", this.offColor);
+	  newNode.childNodes[1].setAttributeNS(null, "fill", this.offColor);
+
+	}
+      }
+      // Finaly, add the new child to the DOM tree under construction
+      newDisplayTree.appendChild(newNode);
+    }
+
+    // Swap screen out for new display tree
+    this.shadowRoot.replaceChild(newDisplayTree, screen);
+    
+    // 4. Render values into new format
+    this.renderValue();
+
+  }
+  //*** UTILS ***
+  getWidthFromFormat(formatString) {
+    let width = 0;
+    let curChar = '';
+    let digitWidth = 32;
+    let separatorWidth = 16;
+    let margin = 2;
+    for(let i = 0; i < formatString.length; i++) {
+      curChar = formatString[i];
+      if(curChar === 'd' || curChar == 'D') {
+	width += (margin + digitWidth + margin);
+      }
+      else if(curChar === ':' || curChar === '.') {
+	width += (margin + separatorWidth + margin);
+      }
+    }
+    return width;
   }
 }
+
 customElements.define("seven-segment-display", SevenSegmentDisplay);
