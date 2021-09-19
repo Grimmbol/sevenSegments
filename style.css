@@ -2,18 +2,53 @@ main {
     margin-left: 10vw;
 }
 
+/* seven-segment-digit */
 .digit-demo {
     display:flex;
-    width: 400px;
+    width: 560px;
 }
 .digit-demo .attribute-half {
     width: 50%;
     display: flex;
     flex-direction: column;
 }
+.digit-demo .element-half {
+    display:flex;
+    justify-content: center;
+    width: 50%;
+}
+
+/* seven-segment-display */
+.display-demo {
+    display:flex;
+    width: 600px;
+}
+.display-demo .attribute-half {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Styles for attribute selection */
+.key-value-pair {
+    display: flex;
+}
+
+.key-value-pair * {
+    margin-bottom: 20px;
+}
 
 .key-value-pair .key{
     margin-left: 20px;
     margin-right: 20px;
+    width: 20%;
+}
+
+.smallValue{
+    width: 50px;
+}
+
+.largeValue {
+    width: 100px;
 }
 

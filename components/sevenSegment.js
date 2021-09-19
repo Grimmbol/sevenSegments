@@ -285,6 +285,11 @@ class SevenSegmentDisplay extends HTMLElement {
     let wrapperElem = document.createElement("div");
     wrapperElem.setAttribute("id", "displayWrapper");
 
+    let newWidth = this.getWidthFromFormat(this.format);
+    wrapperElem.style.width = (newWidth + "px");
+    wrapperElem.style.height = (60 + "px"); 
+
+
     // Parse format string and create DOM nodes
     let bufferStart = 0;
 

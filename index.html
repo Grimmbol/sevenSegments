@@ -15,19 +15,32 @@
       <div class="attribute-half">
 	<div class="key-value-pair">
 	  <span class="key">Value: </span>
-	  <input class="value" type="number"> </input>
+	  <input class="value smallValue" type="number"> </input>
 	</div>
       </div>
       <div class="element-half">
 	<seven-segment-digit value="7"></seven-segment-digit>
       </div>
     </div>
+
+    <h2> &lt seven-segment-display &gt</h2>
     <div class="display-demo">
-      <h2> &lt seven-segment-display &gt</h2>
-      <seven-segment-display
-	value="1234678"
-	format="dd:*dd.*dd">
-      </seven-segment-display>
+      <div class="attribute-half">
+	<div class="key-value-pair">
+	  <span class="key">Value: </span>
+	  <input class="value largeValue" type="number"> </input>
+	</div>
+	<div class="key-value-pair">
+	  <span class="key">Format: </span>
+	  <input class="value largeValue"> </input>
+	</div>
+      </div>
+      <div class="element-half">
+	<seven-segment-display
+	  value="1234678"
+	  format="dd:*dd.*dd">
+	</seven-segment-display>
+      </div>
     </div>
     <div class="clock-demo">
       <h2> &lt seven-segment-clock &gt</h2>
