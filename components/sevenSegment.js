@@ -291,7 +291,9 @@ class SevenSegmentDisplay extends HTMLElement {
 
 
     // Parse format string and create DOM nodes
+    // Count number of digits added. This is needed for update logic
     let bufferStart = 0;
+    let digitCount = 0;
 
     // Add margin style to all children
     while(bufferStart < this.format.length) {
@@ -302,6 +304,7 @@ class SevenSegmentDisplay extends HTMLElement {
 	digit.style.margin = "0px 2px 0px 2px";
 	wrapperElem.appendChild(digit);
 	bufferStart += 1;
+	digitCount += 1;
       }
 
       // Create ':' in off state if alone, or on state if followed by '*'
@@ -343,9 +346,10 @@ class SevenSegmentDisplay extends HTMLElement {
 	}
       }
     }
-
+    
     // Fill available seven segment digits with as much of this.value as possible
-    // Digits without value remain zero
+    // Digits without value remain zero. As all digits are initalised as 0,
+    // this happens automaticly in this case
     let digitNodes = wrapperElem.querySelectorAll("seven-segment-digit");
     let numDigitNodes = digitNodes.length;
     for(let i = 0; i < this.value.length; i++) {
@@ -415,12 +419,23 @@ class SevenSegmentDisplay extends HTMLElement {
     
     // No buffering, under the assumption that few digits change at once
     let curDigits = this.shadowRoot.querySelectorAll("seven-segment-digit");
-    for(let i = 0; i < Math.min(this.value.length, curDigits.length); i++) {
+    let numDigits = curDigits.length;
+
+    // Any digit might need an update. We have to iterate over all
+    for(let i = 0; i < numDigits; i++) {
       let curDigit = curDigits[i];
       let curDigitValue = curDigit.getAttribute("value");
+
+      // If we have more display digits than digits in the input value, set
+      // the unspecified digit to 0.
+      // Othewise, set it to the corrseponding input value digit
+      let curInputDigit = 0;
+      if(i < this.value.length) {
+	curInputDigit = this.value[i];
+      }
       // Compare digit in value to the digit already written
       if(curDigitValue !== this.value[i]) {
-	curDigit.setAttribute("value", this.value[i]);
+	curDigit.setAttribute("value", curInputDigit);
       }
     }
   }

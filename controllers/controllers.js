@@ -50,7 +50,6 @@ function setupDisplayDemo(startValue, startFormat) {
       // Event listener
       curValueField.addEventListener("input", (e) => {
 	curValueField.value = e.target.value;
-	console.log(e.target.value)
 	displayElement.setAttribute("value", e.target.value);
       });
     }
