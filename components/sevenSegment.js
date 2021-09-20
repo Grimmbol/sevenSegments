@@ -499,6 +499,7 @@ class SevenSegmentDisplay extends HTMLElement {
     let oldChildNodes = oldDisplayTree.children;
     let newNode;
     for(let i = 0; i < this.format.length; i++) {
+      newNode = undefined; // We don't yet know if this format character is valid
       curChar = this.format[i];
       if(curChar === 'd' || curChar === 'D') {
 	// Reuse
@@ -580,8 +581,12 @@ class SevenSegmentDisplay extends HTMLElement {
 
 	}
       }
-      // Finaly, add the new child to the DOM tree under construction
-      newDisplayTree.appendChild(newNode);
+
+      // Only add new node if the current format character was valid
+      if(newNode !== undefined) {
+	// Finaly, add the new child to the DOM tree under construction
+	newDisplayTree.appendChild(newNode);
+      }
     }
 
     // Swap screen out for new display tree
