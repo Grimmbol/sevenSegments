@@ -56,10 +56,16 @@ class SevenSegmentDigit extends HTMLElement {
       parseInt(this.getAttribute("value"), 10) :
       0;
 
+    this.disable = false;
+    if(this.hasAttribute("disable") && this.getAttribute("disable") == "true") {
+      this.disable = true;
+    }
+
+    
     // Clamp to a single digit
     if(this.value > 9) {this.value = 9;}
     if(this.value < 0) {this.value = 0;}
-
+    
   }
 
   // Optimisation: avoid transforms
@@ -133,7 +139,7 @@ class SevenSegmentDigit extends HTMLElement {
   }
 
   static get observedAttributes(){
-    return ["value"];
+    return ["value", "disable"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -154,6 +160,16 @@ class SevenSegmentDigit extends HTMLElement {
 	// Render new value of this.value
 	this.render();
       }
+
+      if(name == "disable") {
+	if(newValue == "true") {
+	  this.disable = true;
+	  this.value = -1;
+	}
+	else {
+	  this.disable = false;
+	} 
+      }
     }
   }
 
@@ -165,7 +181,14 @@ class SevenSegmentDigit extends HTMLElement {
   //*** Render ***
   // Update buffer, then swap currently displayed SVG tree with buffer
   render() {
-    let newPattern = SevenSegmentDigit.lightPatterns[this.value];
+    let newPattern;
+
+    if(this.disable) {
+      newPattern = 0b0000000;
+    }
+    else {
+      newPattern = SevenSegmentDigit.lightPatterns[this.value];
+    }
     let isOn = 0;
     // Check bits of new pattern. If 1 turn light on, if 0 turn light off
     let bufferLights = this.svgBuffer.querySelector("g").childNodes;
