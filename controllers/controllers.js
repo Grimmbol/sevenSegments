@@ -3,7 +3,7 @@ window.addEventListener("load", init);
 
 function init() {
   setupDigitDemo("1");
-  setupDisplayDemo("123456", "dd:*dd.*dd");
+  setupDisplayDemo("__-3456", "dd:*-dd.*dd");
 }
 
 function setupDigitDemo(startValue) {

@@ -51,21 +51,9 @@ class SevenSegmentDigit extends HTMLElement {
   }
   
   setupState() {
-    this.value =
-      this.hasAttribute("value") ?
-      parseInt(this.getAttribute("value"), 10) :
-      0;
-
-    this.disable = false;
-    if(this.hasAttribute("disable") && this.getAttribute("disable") == "true") {
-      this.disable = true;
-    }
-
-    
-    // Clamp to a single digit
-    if(this.value > 9) {this.value = 9;}
-    if(this.value < 0) {this.value = 0;}
-    
+    // This method is called before document load
+    this.value = 0;
+    this.disable = false;    
   }
 
   // Optimisation: avoid transforms
@@ -149,14 +137,20 @@ class SevenSegmentDigit extends HTMLElement {
       if(name == "value") {
 	this.value =
 	  parseInt(newValue, 10);
-
+	
 	if (isNaN(this.value)) {
-	  this.value = 0;
+	  if(newValue === "-") {
+	    this.value = -1;
+	  }
+	  else {
+	    this.value = 0;
+	  }
 	}
-	// Clamp to a single digit
-	if(this.value > 9) {this.value = 9;}
-	if(this.value < 0) {this.value = 0;}
-
+	else {
+	  // Clamp to a single digit
+	  if(this.value > 9) {this.value = 9;}
+	  if(this.value < 0) {this.value = 0;}
+	}
 	// Render new value of this.value
 	this.render();
       }
@@ -164,7 +158,6 @@ class SevenSegmentDigit extends HTMLElement {
       if(name == "disable") {
 	if(newValue == "true") {
 	  this.disable = true;
-	  this.value = -1;
 	}
 	else {
 	  this.disable = false;
@@ -182,9 +175,11 @@ class SevenSegmentDigit extends HTMLElement {
   // Update buffer, then swap currently displayed SVG tree with buffer
   render() {
     let newPattern;
-
     if(this.disable) {
       newPattern = 0b0000000;
+    }
+    else if(this.value === -1) {
+      newPattern = 0b0001000;
     }
     else {
       newPattern = SevenSegmentDigit.lightPatterns[this.value];
@@ -458,6 +453,7 @@ class SevenSegmentDisplay extends HTMLElement {
       }
       // Compare digit in value to the digit already written
       if(curDigitValue !== this.value[i]) {
+	curDigit.setAttribute("disable", "false")
 	curDigit.setAttribute("value", curInputDigit);
       }
     }
