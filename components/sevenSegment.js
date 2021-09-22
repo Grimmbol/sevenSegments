@@ -161,7 +161,8 @@ class SevenSegmentDigit extends HTMLElement {
 	}
 	else {
 	  this.disable = false;
-	} 
+	}
+	this.render();
       }
     }
   }
@@ -453,8 +454,13 @@ class SevenSegmentDisplay extends HTMLElement {
       }
       // Compare digit in value to the digit already written
       if(curDigitValue !== this.value[i]) {
-	curDigit.setAttribute("disable", "false")
-	curDigit.setAttribute("value", curInputDigit);
+	if(this.value[i] === "_") {
+	  curDigit.setAttribute("disable", "true");
+	}
+	else {
+	  curDigit.setAttribute("disable", "false");
+	  curDigit.setAttribute("value", curInputDigit);
+	}
       }
     }
   }
@@ -524,11 +530,13 @@ class SevenSegmentDisplay extends HTMLElement {
 	// Reuse
 	if(digits.length > 1) {
 	  newNode = oldChildNodes[digits.shift()];
+	  newNode.setAttribute("disable", "false");	  
 	}
 	// Create new
 	else {
 	  newNode = document.createElement("seven-segment-digit");
 	  newNode.style.margin = "0px 2px 0px 2px";
+	  newNode.setAttribute("disable", "false");
 	}
       }
       else if(curChar === '.') {
