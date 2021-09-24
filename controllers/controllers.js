@@ -2,11 +2,11 @@
 window.addEventListener("load", init);
 
 function init() {
-  setupDigitDemo("1");
+  setupDigitDemo("1", "32", "60", "false");
   setupDisplayDemo("__-3456", "dd:*-dd.*dd");
 }
 
-function setupDigitDemo(startValue) {
+function setupDigitDemo(startValue, startWidth, startHeight, startDisable) {
   let digitDemoWrap = document.querySelector(".digit-demo");
   let keyValuePairs = digitDemoWrap.querySelectorAll(".key-value-pair");
   let demoElement = digitDemoWrap.querySelector("seven-segment-digit");
@@ -28,8 +28,44 @@ function setupDigitDemo(startValue) {
 	demoElement.setAttribute("value", e.data);
       });
     }
+    else if(curKey === "width") {
+      // Inital state
+      demoElement.setAttribute("width", startWidth);
+      curValueField.value = startWidth;
+      // Event listener
+      curValueField.addEventListener('input', (e) => {
+	// Clear old, replace with new
+	demoElement.setAttribute("width", e.data);
+      });
+    }
+    
+    else if(curKey === "height") {
+      // Inital state
+      demoElement.setAttribute("height", startHeight);
+      curValueField.value = startHeight;
+      // Event listener
+      curValueField.addEventListener('input', (e) => {
+	// Clear old, replace with new
+	demoElement.setAttribute("height", e.data);
+      });
+     }
+    else if(curKey === "disable") {
+      // Inital state
+      demoElement.setAttribute("disable", startDisable);
+      curValueField.checked =
+	(startDisable == "true" ? true : false);
+
+      curValueField.addEventListener('change', (e) => {
+	console.log("Flippy")
+	let newDisable =
+	  (curValueField.checked == true ? "true" : "false") 
+	demoElement.setAttribute("disable", newDisable);
+      });
+
+    }
   }
 }
+
 
 function setupDisplayDemo(startValue, startFormat) {
   let displayDemoWrap = document.querySelector(".display-demo");
