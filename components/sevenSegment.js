@@ -686,7 +686,7 @@ class SevenSegmentDisplay extends HTMLElement {
     let margin = 2;
     for(let i = 0; i < formatString.length; i++) {
       curChar = formatString[i];
-      if(curChar === 'd' || curChar == 'D') {
+      if(curChar === 'd' || curChar == 'D' || curChar == '_') {
 	width += (margin + digitWidth + margin);
       }
       else if(curChar === ':' || curChar === '.') {
