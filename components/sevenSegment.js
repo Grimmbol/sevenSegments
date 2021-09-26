@@ -356,6 +356,7 @@ class SevenSegmentDisplay extends HTMLElement {
 
     // Add margin style to all children
     while(bufferStart < this.format.length) {
+      console.log(bufferStart)
       let curChar = this.format[bufferStart];
    
       if(curChar == "d" || curChar == "D") {
@@ -366,6 +367,15 @@ class SevenSegmentDisplay extends HTMLElement {
 	digitCount += 1;
       }
 
+      else if(curChar == "_") {
+	let digit = document.createElement("seven-segment-digit");
+	digit.style.margin = "0px 2px 0px 2px";
+	digit.setAttribute("disable", "true");
+	wrapperElem.appendChild(digit);
+	bufferStart += 1;
+	digitCount += 1;
+      }
+      
       // Create ':' in off state if alone, or on state if followed by '*'
       else if(curChar == ':') {
 	if((bufferStart + 1) < this.format.length
@@ -403,6 +413,10 @@ class SevenSegmentDisplay extends HTMLElement {
 	  wrapperElem.appendChild(newUnlitDot);
 	  bufferStart += 1;
 	}
+      }
+      // We found some invalid char, gotta increment the buffer ponter to get past it
+      else {
+	bufferStart += 1;
       }
     }
     
