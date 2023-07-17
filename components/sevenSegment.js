@@ -1,7 +1,4 @@
-'use strict'
-
-//  0-9 initally
-class SevenSegmentDigit extends HTMLElement {
+export class SevenSegmentDigit extends HTMLElement {
 
   // index 0 is the number 0, index 1 is the number 1 etc
   // Light mapping is as follows
@@ -246,12 +243,11 @@ class SevenSegmentDigit extends HTMLElement {
     
   }
 }
-customElements.define("seven-segment-digit", SevenSegmentDigit);
 
 
 // ***** DISPLAY *****
 // Stores display value as string
-class SevenSegmentDisplay extends HTMLElement {
+export class SevenSegmentDisplay extends HTMLElement {
 
   // *** Setup ***
   constructor() {
@@ -696,5 +692,3 @@ class SevenSegmentDisplay extends HTMLElement {
     return width;
   }
 }
-
-customElements.define("seven-segment-display", SevenSegmentDisplay);

@@ -1,5 +1,13 @@
 'use strict'
+
+import {
+    SevenSegmentDisplay,
+    SevenSegmentDigit
+} from "../components/sevenSegment.js"
+
 window.addEventListener("load", init);
+customElements.define("seven-segment-display", SevenSegmentDisplay);
+customElements.define("seven-segment-digit", SevenSegmentDigit);
 
 function init() {
   setupDigitDemo("1", "32", "60", "false");
