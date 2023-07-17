@@ -3,8 +3,19 @@ Web components that emulates seven segment displays. Currently contains a compon
 
 ## Usage
 Include the script for the component
-``` <script type="text/javascript" src="sevenSegment.js"></script> ```
+``` <script type="module" src="sevenSegment.js"></script> ```
 
+Import and register the components in a script
+```
+import {
+    SevenSegmentDisplay,
+    SevenSegmentDigit
+} from "../components/sevenSegment.js"
+
+customElements.define("seven-segment-display", SevenSegmentDisplay);
+customElements.define("seven-segment-digit", SevenSegmentDigit);
+
+```
 Use the components!
 ```  
 <seven-segment-display
@@ -15,7 +26,7 @@ Use the components!
 ```
 
 ## Installation
-It's a web component, so all you need to do is to include the source script.
+There is no npm pacage or similar for this project. Copy and paste sevenSegment.js
 
 ## Todo
 * Wrap in module for use in other js projects
